@@ -1,0 +1,61 @@
+// Copy this file and rename to "launch.json" to have this run options appear within VSCode
+{
+  "version": "0.2.0",
+  "compounds": [
+    {
+      "name": "devstack.ext",
+      "presentation": {
+        "visibility": "visible",
+        "group": "devstack.ext",
+        "order": 1
+      },
+      "configurations": [
+        "frontdoor_devstack.ext",
+        "worker_devstack.ext"
+      ],
+      "stopAll": true
+    }
+  ],
+  "configurations": [
+    {
+      "name": "frontdoor_devstack.ext",
+      "presentation": {
+        "visibility": "visible",
+        "group": "devstack.ext",
+        "order": 2
+      },
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "program": "${workspaceFolder}/modules/frontdoor/cmd/frontdoor/main.go",
+      "env": {
+        "APP_NAME": "frontdoor",
+        "TCP_PORT": "9090"
+      },
+      "envFile": [
+        "${workspaceFolder}/.env",
+        "${workspaceFolder}/.env.local"
+      ]
+    },
+    {
+      "name": "worker_devstack.ext",
+      "presentation": {
+        "visibility": "hidden",
+        "group": "devstack.ext",
+        "order": 3
+      },
+      "type": "go",
+      "request": "launch",
+      "mode": "auto",
+      "program": "${workspaceFolder}/modules/worker/cmd/worker/main.go",
+      "env": {
+        "APP_NAME": "worker",
+        "TCP_PORT": "9091"
+      },
+      "envFile": [
+        "${workspaceFolder}/.env",
+        "${workspaceFolder}/.env.local"
+      ]
+    }
+  ]
+}

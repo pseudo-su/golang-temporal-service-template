@@ -1,0 +1,81 @@
+linters:
+  disable-all: true
+  enable:
+    - dogsled
+    - errcheck
+    - gocognit
+    - goconst
+    - gocritic
+    - gocyclo
+    - gofmt
+    - gosimple
+    - govet
+    - ineffassign
+    - misspell
+    - nakedret
+    - staticcheck
+    - typecheck
+    - unconvert
+    - unparam
+    - unused
+    - whitespace
+    - nilerr
+    - exhaustive
+    - depguard
+    - ginkgolinter
+  skip-dirs:
+    - vendor
+linters-settings:
+  staticcheck:
+    checks:
+      - all
+      - '-SA1019' # https://staticcheck.io/docs/checks#SA1019
+  govet:
+    enable-all: true
+    disable:
+      - fieldalignment
+  depguard:
+    rules:
+      log_rules:
+        deny:
+          - pkg: "github.com/rs/zerolog/log"
+            desc: not allowed, use slog
+          - pkg: "github.com/sirupsen/logrus"
+            desc: not allowed, use slog
+          - pkg: "github.com/pingcap/log"
+            desc: not allowed, use slog
+          - pkg: "cloud.google.com/go/logging"
+            desc: not allowed, use slog
+          - pkg: "github.com/go-kit/log"
+            desc: not allowed, use slog
+          - pkg: "github.com/docker/docker/daemon/logger"
+            desc: not allowed, use slog
+          - pkg: "go.uber.org/zap"
+            desc: not allowed, use slog
+      error_rules:
+        deny:
+          - pkg: "github.com/go-errors/errors"
+            desc: use stdlib errors package instead
+          - pkg: "github.com/pkg/errors"
+            desc: 'use stdlib errors package instead, wrap errors with fmt.Errorf("your message: %w", err)'
+      misc_rules:
+        deny:
+          - pkg: "go.opencensus.io"
+            desc: use go.opentelemetry.io instead
+
+run:
+  timeout: 3m
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
+  exclude-rules:
+    # Exclude some linters from running on tests files.
+    - path: _test\.go
+      linters:
+        - goconst
+        - unparam
+
+service:
+  golangci-lint-version: v1.55.2

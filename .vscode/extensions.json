@@ -1,0 +1,16 @@
+{
+  // https://go.microsoft.com/fwlink/?LinkId=827846
+  "recommendations": [
+    "golang.go",
+    "mikestead.dotenv",
+    "mechatroner.rainbow-csv",
+    "editorconfig.editorconfig",
+    "eamodio.gitlens",
+    "mhutchie.git-graph",
+    "ms-vsliveshare.vsliveshare-pack",
+    "davidanson.vscode-markdownlint",
+    "yzhang.markdown-all-in-one",
+    "pkief.material-icon-theme",
+    "jebbs.plantuml"
+  ]
+}

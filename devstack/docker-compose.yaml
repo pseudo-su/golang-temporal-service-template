@@ -1,0 +1,259 @@
+version: "3"
+services:
+
+  all:
+    image: tianon/true
+    restart: "no"
+    depends_on:
+      - components
+      - deps
+      - tools
+
+  components:
+    image: tianon/true
+    restart: "no"
+    depends_on:
+      component_frontdoor:
+        condition: service_healthy
+      component_worker:
+        condition: service_healthy
+  deps:
+    image: tianon/true
+    restart: "no"
+    depends_on:
+      # TODO: fix pubsub
+      # dep_pubsub:
+      #   condition: service_started
+      # dep_pubsub_creator:
+      #   condition: service_completed_successfully
+      dep_temporal-db:
+        condition: service_started
+      dep_temporal-elasticsearch:
+        condition: service_started
+      dep_temporal-server:
+        condition: service_started
+      dep_temporal-startupscripts:
+        condition: service_completed_successfully
+      dep_opentelemetry-collector:
+        condition: service_started
+      dep_telemetry-jaeger:
+        condition: service_started
+
+  tools:
+    image: tianon/true
+    restart: "no"
+    depends_on:
+      tool_temporal-ui:
+        condition: service_started
+
+  ### COMPONENTS
+
+  component_frontdoor:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      args:
+        - entrypoint=modules/frontdoor/cmd/frontdoor
+    env_file:
+      - ./components/frontdoor/.env
+    environment:
+      - HTTPS_PROXY=
+      - https_proxy=
+      - GOCOVERDIR=/app/covdatafiles
+    ports:
+      - 9090:8080
+    volumes:
+      - ./components/frontdoor/launchdarkly-flags.yaml:/etc/launchdarkly-flags.yaml
+    healthcheck:
+      test: [ "CMD", "/bin/grpc-health-probe", "-addr=:8080", "-connect-timeout=100ms", "-rpc-timeout=150ms" ]
+      interval: 3s
+      timeout: 30s
+      retries: 10
+
+  component_worker:
+    depends_on:
+      dep_temporal-startupscripts:
+        condition: service_completed_successfully
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      args:
+        - entrypoint=modules/worker/cmd/worker
+    env_file:
+      - ./components/worker/.env
+    environment:
+      - HTTPS_PROXY=
+      - https_proxy=
+      - GOCOVERDIR=/app/covdatafiles
+    ports:
+      - 9091:8080
+    volumes:
+      - ./components/worker/coverage:/app/covdatafiles
+    healthcheck:
+      test: [ "CMD", "/bin/grpc-health-probe", "-addr=:8080", "-connect-timeout=100ms", "-rpc-timeout=150ms" ]
+      interval: 3s
+      timeout: 30s
+      retries: 10
+
+  ### DEPENDENCIES
+
+  # TODO: make pubsub emulator work
+  dep_pubsub:
+    image: gcr.io/google.com/cloudsdktool/google-cloud-cli:372.0.0-emulators
+    restart: unless-stopped
+    environment:
+      - HTTP_PROXY=
+      - HTTPS_PROXY=
+      - http_proxy=
+      - https_proxy=
+      - PUBSUB_PORT=8086
+      - PUBSUB_PROJECT=
+      - PUBSUB_TOPIC=
+      - PUBSUB_SUBSCRIPTION=
+    ports:
+      - 8086:8086
+    entrypoint:
+      - gcloud beta emulators pubsub start
+    healthcheck:
+      test: timeout 10s bash -c ':> /dev/tcp/127.0.0.1/8086' || exit 1
+      interval: 2s
+      timeout: 10s
+      retries: 20
+
+  dep_pubsub_creator:
+    depends_on:
+      dep_pubsub:
+        condition: service_healthy
+    image: alpine/curl
+    restart: on-failure
+    environment:
+      - HTTP_PROXY=
+      - HTTPS_PROXY=
+      - http_proxy=
+      - https_proxy=
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        curl -X PUT http://dep_pubsub:8086/v1/projects/devstack/topics/service.topic
+        curl -X PUT http://dep_pubsub:8086/v1/projects/devstack/subscriptions/service.subscription -H 'content-type: application/json' --data '{"topic":"projects/devstack/topics/service.topic"}'
+
+  dep_temporal-db:
+    image: postgres:12-alpine
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_USER=temporal
+      - POSTGRES_PASSWORD=temporal
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready" ]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  dep_temporal-elasticsearch:
+    environment:
+      - HTTP_PROXY=
+      - HTTPS_PROXY=
+      - http_proxy=
+      - https_proxy=
+      - cluster.routing.allocation.disk.threshold_enabled=true
+      - cluster.routing.allocation.disk.watermark.low=512mb
+      - cluster.routing.allocation.disk.watermark.high=256mb
+      - cluster.routing.allocation.disk.watermark.flood_stage=128mb
+      - ingest.geoip.downloader.enabled=false
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms128m -Xmx128m
+      - xpack.security.enabled=false
+    image: elasticsearch:8.8.1
+    restart: unless-stopped
+    ports:
+      - 9200:9200
+    healthcheck:
+      test: curl -s http://dep_temporal-elasticsearch:9200 >/dev/null || exit 1
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  dep_temporal-server:
+    depends_on:
+      dep_temporal-elasticsearch:
+        condition: service_healthy
+      dep_temporal-db:
+        condition: service_healthy
+    environment:
+      - HTTP_PROXY=
+      - HTTPS_PROXY=
+      - http_proxy=
+      - https_proxy=
+      - DB=postgresql
+      - DB_PORT=5432
+      - POSTGRES_USER=temporal
+      - POSTGRES_PWD=temporal
+      - POSTGRES_SEEDS=dep_temporal-db
+      - ENABLE_ES=true
+      - ES_SEEDS=dep_temporal-elasticsearch
+      - ES_VERSION=v7
+      - SKIP_ADD_CUSTOM_SEARCH_ATTRIBUTES=true
+      - DYNAMIC_CONFIG_FILE_PATH=/etc/temporal/config/dynamicconfig.yaml
+    image: temporalio/auto-setup:1.20.2
+    restart: unless-stopped
+    ports:
+      - 7233:7233
+    volumes:
+      - ./deps/temporal-server/config.yaml:/etc/temporal/config/dynamicconfig.yaml
+
+  dep_temporal-startupscripts:
+    image: temporalio/admin-tools:1.20.0
+    environment:
+      - TEMPORAL_CLI_ADDRESS=dep_temporal-server:7233
+      - HTTP_PROXY=
+      - HTTPS_PROXY=
+      - http_proxy=
+      - https_proxy=
+    depends_on:
+      dep_temporal-elasticsearch:
+        condition: service_healthy
+      dep_temporal-db:
+        condition: service_healthy
+    volumes:
+      - ./deps/temporal-startupscripts/run.sh:/etc/run.sh
+    entrypoint: /etc/run.sh
+
+  dep_opentelemetry-collector:
+    image: otel/opentelemetry-collector:0.84.0
+    restart: unless-stopped
+    volumes:
+      - ./deps/opentelemetry-collector/config.yaml:/etc/otelcol/config.yaml
+    ports:
+      - 4317:4317   # OTLP gRPC receiver
+    environment:
+      - HTTP_PROXY=
+      - HTTPS_PROXY=
+      - http_proxy=
+      - https_proxy=
+    depends_on:
+      - dep_telemetry-jaeger
+
+  dep_telemetry-jaeger:
+    image: jaegertracing/all-in-one:1
+    restart: unless-stopped
+    ports:
+      - 14250:14250 # collector
+      - 16686:16686 # Web UI
+      - 16685:16685 # gRPC QueryService
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+
+  ### TOOLS
+
+  tool_temporal-ui:
+    image: temporalio/ui:2.12.0
+    restart: on-failure
+    environment:
+      - TEMPORAL_ADDRESS=dep_temporal-server:7233
+      - TEMPORAL_UI_PORT=8088
+      - HTTPS_PROXY=
+      - https_proxy=
+    ports:
+      - 8088:8088

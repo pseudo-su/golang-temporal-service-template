@@ -1,0 +1,73 @@
+name: main-branch
+
+on:
+  push:
+    branches:
+      - 'main'
+
+jobs:
+  workflow-variables:
+    name: Setup workflow variables
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Initialize workflow variables
+        id: vars
+        shell: bash
+        run: |
+          echo "service_name=$(echo ${GITHUB_REPOSITORY} | awk  -F / '{print $2}')" >> $GITHUB_OUTPUT
+          echo "git_sha=${GITHUB_SHA}" >> $GITHUB_OUTPUT
+          echo "git_sha_short=${GITHUB_SHA::8}" >> $GITHUB_OUTPUT
+    outputs:
+      service_name: ${{ steps.vars.outputs.service_name }}
+      git_sha: ${{ steps.vars.outputs.git_sha }}
+      git_sha_short: ${{ steps.vars.outputs.git_sha_short }}
+
+  build-and-verify:
+    name: build-and-verify
+    uses: ./.github/workflows/_build-and-verify.yaml
+    needs:
+      - workflow-variables
+    with:
+      sonar-enabled: true
+
+  package-and-publish:
+    name: package-and-publish
+    uses: ./.github/workflows/_package-and-publish.yaml
+    permissions:
+      contents: read
+      packages: write
+    needs:
+      - workflow-variables
+
+  release-dev:
+    name: release-dev
+    uses: ./.github/workflows/_release.yaml
+    needs:
+      - workflow-variables
+      - build-and-verify
+      - package-and-publish
+    with:
+      env: dev
+      smoke-tests-enabled: true
+
+  release-test:
+    name: release-test
+    uses: ./.github/workflows/_release.yaml
+    needs:
+      - workflow-variables
+      - release-dev
+    with:
+      env: test
+      smoke-tests-enabled: true
+
+  release-prod:
+    name: release-prod
+    uses: ./.github/workflows/_release.yaml
+    needs:
+      - workflow-variables
+      - release-test
+    with:
+      env: prod
+      smoke-tests-enabled: false

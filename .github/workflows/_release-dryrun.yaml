@@ -1,0 +1,18 @@
+name: release
+
+on:
+  workflow_call:
+    inputs:
+      env:
+        type: string
+        description: Env/Stage of deployment
+        required: true
+
+jobs:
+
+  dryrun-application:
+    name: 'Application'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3

@@ -1,0 +1,81 @@
+name: setup
+description: Setup project dependencies
+
+inputs:
+  go-enabled:
+    description: Setup Golang
+    default: 'false'
+    required: false
+  java-enabled:
+    description: Setup Java
+    default: 'false'
+    required: false
+  tool-deps-enabled:
+    description: Setup tool dependencies
+    default: 'false'
+    required: false
+  app-deps-enabled:
+    description: Setup app dependencies
+    default: 'false'
+    required: false
+
+outputs: {}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    # Setup java
+    - uses: sdkman/sdkman-action@master
+      id: sdkman
+      if: inputs.java-enabled == 'true'
+      with:
+        candidate: java
+        version: 18.0.1-tem
+    - uses: actions/setup-java@v3
+      id: setup-java
+      if: inputs.java-enabled == 'true'
+      with:
+        distribution: jdkfile
+        java-version: 18.0.1
+        jdkFile: ${{ steps.sdkman.outputs.file }}
+        # cache: gradle
+    - name: print java version
+      if: inputs.java-enabled == 'true'
+      shell: bash
+      run: |
+        rm hook_post_java_18.0.1-tem.sh
+        java --version
+
+    # Setup golang
+    - name: Set up Go 1.21
+      if: inputs.go-enabled == 'true'
+      uses: actions/setup-go@v4
+      with:
+        go-version: 1.21
+        cache-dependency-path: "**/*.sum"
+
+    # Tool dependencies
+    - name: Cache tool dependencies
+      if: inputs.tool-deps-enabled == 'true'
+      uses: actions/cache@v3
+      env:
+        cache-name: cache-tool-deps
+      with:
+        path: |
+          tools/**
+          !tools/tools.cfg
+          !tools/tools.mk
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('tools/tools.cfg', 'tools/tools.mk') }}
+
+    - name: Install tool dependencies
+      if: inputs.tool-deps-enabled == 'true'
+      shell: bash
+      run: make deps.tools.install
+
+    - name: Install app dependencies
+      if: inputs.app-deps-enabled == 'true'
+      shell: bash
+      run: make deps.app.install

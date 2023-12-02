@@ -1,0 +1,30 @@
+with-expecter: true
+inpackage: true
+dir: "{{.InterfaceDir}}"
+outpkg: "{{.PackageName}}"
+packages:
+  github.com/pseudo-su/golang-temporal-service-template/modules/worker/pkg/workflowclient:
+    interfaces:
+      WorkflowClientInterface: {}
+
+  go.temporal.io/sdk/converter:
+    config:
+      dir: "modules/testing-tools/vendormocks"
+    interfaces:
+      EncodedValue:
+        config:
+          inpackage: false
+          outpkg: "vendormocks"
+          mockname: MockTemporalEncodedValue
+          filename: mock_TemporalEncodedValue.go
+
+  google.golang.org/grpc/health/grpc_health_v1:
+    config:
+      dir: "modules/testing-tools/vendormocks"
+    interfaces:
+      HealthClient:
+        config:
+          inpackage: false
+          outpkg: "vendormocks"
+          mockname: MockHealthClient
+          filename: mock_grpc_health_client.go

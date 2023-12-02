@@ -1,0 +1,5 @@
+*
+!.gitignore
+!/device-info.sh
+!/tools.cfg
+!/tools.mk

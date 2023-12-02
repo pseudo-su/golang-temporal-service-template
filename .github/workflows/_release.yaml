@@ -1,0 +1,58 @@
+name: release
+
+on:
+  workflow_call:
+    inputs:
+      env:
+        type: string
+        description: Env/Stage of deployment
+        required: true
+      smoke-tests-enabled:
+        type: boolean
+        description: Enable running smoke tests after deployment
+        required: true
+jobs:
+
+  pre-release:
+    name: Pre-release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+  deploy-application:
+    name: Deploy application
+    runs-on: ubuntu-latest
+    needs:
+      - pre-release
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+  post-release:
+    name: Post-release
+    runs-on: ubuntu-latest
+    needs:
+      - pre-release
+      - deploy-application
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+  run-smoke-tests:
+    if: inputs.smoke-tests-enabled
+    name: Run smoke tests
+    runs-on: ubuntu-latest
+    needs:
+      - pre-release
+      - deploy-application
+      - post-release
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup
+        uses: ./.github/actions/setup
+        with:
+          go-enabled: true
+          app-deps-enabled: true

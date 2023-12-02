@@ -1,0 +1,38 @@
+skinparam {
+    monochrome false
+    ranksep 20
+    dpi 150
+    arrowThickness 0.7
+    packageTitleAlignment left
+    usecaseBorderThickness 0.4
+    defaultFontSize 12
+
+    rectangle {
+        BorderThickness 1
+        roundCorner 5
+    }
+
+    Database {
+        BorderColor #LightSlateGray
+    }
+
+    Interface {
+        BorderColor #LightSlateGray
+    }
+    Agent {
+        BorderThickness 0
+        roundCorner 5
+    }
+    Component {
+        BorderThickness 0.5
+        Style uml2
+        roundCorner 5
+    }
+    linetype poly
+    ' linetype ortho
+
+    backgroundColor white
+
+    NoteBorderThickness 0.5
+    NoteBorderColor #LightSlateGray
+}

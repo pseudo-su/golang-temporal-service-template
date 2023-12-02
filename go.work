@@ -1,0 +1,9 @@
+go 1.21
+
+use (
+	./modules/frontdoor
+	./modules/service-pkg
+	./modules/testing-tools
+	./modules/worker
+	./test-harness
+)

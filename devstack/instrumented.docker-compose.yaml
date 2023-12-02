@@ -1,0 +1,16 @@
+services:
+  component_frontdoor:
+    build:
+      target: runtime-instrumented
+    environment:
+      - GOCOVERDIR=/app/covdatafiles
+    volumes:
+      - $PWD/devstack/components/frontdoor/coverage:/app/covdatafiles:rw
+
+  component_worker:
+    build:
+      target: runtime-instrumented
+    environment:
+      - GOCOVERDIR=/app/covdatafiles
+    volumes:
+      - $PWD/devstack/components/worker/coverage:/app/covdatafiles:rw

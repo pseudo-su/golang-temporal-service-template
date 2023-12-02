@@ -1,0 +1,36 @@
+## OS Files
+
+**/.DS_Store
+
+### Project Tooling
+
+# dotenv files
+/.env*.local
+
+# Direnv
+/.envrc
+
+### IDE
+
+# Vscode
+.vscode/settings.json
+.vscode/launch.json
+
+# IDEA/IntelliJ/Webstorm/Goland etc
+.idea/
+
+### Temp files
+__debug_bin*
+
+# Runtime data
+*.pid
+*.seed
+*.pid.lock
+
+# Don't keep any secrets/keys in git
+/**.pem
+
+# Ignore .session.sql files
+/*.session.sql
+
+/reports/**

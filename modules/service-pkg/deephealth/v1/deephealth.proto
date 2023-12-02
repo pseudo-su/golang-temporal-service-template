@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package deephealth.v1;
+
+option go_package = "github.com/pseudo-su/golang-temporal-service-template/modules/service-pkg/deephealth/v1;deephealth_v1";
+option java_package = "com.github.pseudo-su.golang-temporal-service-template.deephealth.v1";
+option java_outer_classname = "DeephealthProto";
+option java_multiple_files = true;
+
+import "google/api/annotations.proto";
+
+// The deep health service definition.
+// buf:lint:ignore SERVICE_SUFFIX
+service DeepHealth {
+
+  // Checks the health of the service
+  // (--
+  //   api-linter: core::0136::verb-noun=disabled
+  //   api-linter: core::0136::http-uri-suffix=disabled
+  //   aip.dev/not-precedent: endpoint should simply be /Health and not verb-noun format
+  // --)
+  rpc Check (CheckRequest) returns (CheckResponse) {
+    option (google.api.http) = {
+      get: "/v1/health/deep"
+    };
+  }
+}
+
+// The request message containing the user's name.
+message CheckRequest {}
+
+// The response message containing the greetings
+message CheckResponse {
+  // Placeholder message response
+  string message = 1;
+}

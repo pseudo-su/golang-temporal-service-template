@@ -1,0 +1,28 @@
+version: v1
+plugins:
+  - plugin: go
+    path: ../../tools/protoc-gen-go
+    out: .
+    opt:
+      - paths=source_relative
+  - plugin: go-grpc
+    path: ../../tools/protoc-gen-go-grpc
+    out: .
+    opt:
+      - paths=source_relative
+  - plugin: grpc-gateway
+    path: ../../tools/protoc-gen-grpc-gateway
+    out: .
+    opt:
+      - paths=source_relative
+  - plugin: openapi
+    strategy: all
+    path: ../../tools/protoc-gen-openapi
+    out: .
+    opt:
+      - paths=source_relative
+  - name: gapi-lint
+    path: ../../tools/protoc-gen-gapi-lint
+    out: .
+    opt:
+      - paths=source_relative
