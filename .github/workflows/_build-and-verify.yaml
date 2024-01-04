@@ -167,12 +167,12 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup
-        uses: ./.github/actions/setup
-        with:
-          go-enabled: true
-          app-deps-enabled: true
-          tool-deps-enabled: true
+      # - name: Setup
+      #   uses: ./.github/actions/setup
+      #   with:
+      #     go-enabled: true
+      #     app-deps-enabled: true
+      #     tool-deps-enabled: true
 
       - uses: actions/download-artifact@v3
         continue-on-error: true
