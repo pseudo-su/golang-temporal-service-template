@@ -157,7 +157,6 @@ jobs:
     if: inputs.sonar-enabled
     runs-on: ubuntu-latest
     needs:
-      - cache-setup
       - verify
       - verify-codegen
       - unit-test

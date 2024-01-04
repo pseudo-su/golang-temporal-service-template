@@ -48,7 +48,6 @@ jobs:
     uses: ./.github/workflows/_release-dryrun.yaml
     needs:
       - workflow-variables
-      - package-and-publish
     with:
       env: dev
 
@@ -57,7 +56,6 @@ jobs:
     uses: ./.github/workflows/_release-dryrun.yaml
     needs:
       - workflow-variables
-      - package-and-publish
     with:
       env: test
 
@@ -66,7 +64,6 @@ jobs:
     uses: ./.github/workflows/_release-dryrun.yaml
     needs:
       - workflow-variables
-      - package-and-publish
     with:
       env: prod
 
