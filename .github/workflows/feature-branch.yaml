@@ -48,7 +48,6 @@ jobs:
     uses: ./.github/workflows/_release-dryrun.yaml
     needs:
       - workflow-variables
-      - build-and-verify
     with:
       env: dev
 
@@ -57,7 +56,6 @@ jobs:
     uses: ./.github/workflows/_release-dryrun.yaml
     needs:
       - workflow-variables
-      - build-and-verify
     with:
       env: test
 
@@ -66,7 +64,6 @@ jobs:
     uses: ./.github/workflows/_release-dryrun.yaml
     needs:
       - workflow-variables
-      - build-and-verify
     with:
       env: prod
 
@@ -75,7 +72,7 @@ jobs:
     uses: ./.github/workflows/_release.yaml
     needs:
       - workflow-variables
-      - build-and-verify
+      - package-and-publish
     with:
       env: dev
       smoke-tests-enabled: true
@@ -85,7 +82,7 @@ jobs:
     uses: ./.github/workflows/_release.yaml
     needs:
       - workflow-variables
-      - build-and-verify
+      - package-and-publish
       - release-dev
     with:
       env: test
