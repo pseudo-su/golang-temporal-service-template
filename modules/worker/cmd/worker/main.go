@@ -6,9 +6,8 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/pseudo-su/golang-temporal-service-template/modules/service-pkg/envconfig"
 	"github.com/pseudo-su/golang-temporal-service-template/modules/service-pkg/httpserver"
-	"github.com/pseudo-su/golang-temporal-service-template/modules/service-pkg/logsetup"
+	"github.com/pseudo-su/golang-temporal-service-template/modules/service-pkg/initialise"
 	"github.com/pseudo-su/golang-temporal-service-template/modules/service-pkg/rungroup"
 	"github.com/pseudo-su/golang-temporal-service-template/modules/worker/internal"
 	"go.temporal.io/sdk/client"
@@ -18,23 +17,16 @@ import (
 	"google.golang.org/grpc/health/grpc_health_v1"
 )
 
-var cfg *internal.WorkerConfig
-
-func init() {
-	ctx := context.Background()
-
-	cfg = envconfig.ParseEnv(&internal.WorkerConfig{})
-	slog.InfoContext(ctx, "App config loaded", slog.Any("name", cfg.App.Name), slog.Any("env", cfg.App.Env))
-
-	logger := logsetup.NewLogger(
-		logsetup.WithModeStr(cfg.Log.Mode),
-		logsetup.WithLevelStr(cfg.Log.Level),
-	)
-	slog.SetDefault(logger)
-}
-
 func main() {
 	ctx := context.Background()
+
+	cfg, err := initialise.ServiceWithConfig(ctx, &internal.WorkerConfig{})
+	if err != nil {
+		slog.ErrorContext(context.Background(), "unable to parse environment variables", slog.Any("error", err))
+		os.Exit(1)
+	}
+
+	slog.InfoContext(ctx, "App config loaded", slog.Any("name", cfg.App.Name), slog.Any("env", cfg.App.Env))
 
 	slog.InfoContext(ctx, "Initialising http server")
 	address := fmt.Sprintf(":%d", cfg.Tcp.Port)

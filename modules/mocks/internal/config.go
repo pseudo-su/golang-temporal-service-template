@@ -7,3 +7,7 @@ type MocksConfig struct {
 	Tcp envconfig.TcpConfig `envPrefix:"TCP_"`
 	Log envconfig.LogConfig `envPrefix:"LOG_"`
 }
+
+func (mc *MocksConfig) LogConfig() envconfig.LogConfig {
+	return mc.Log
+}

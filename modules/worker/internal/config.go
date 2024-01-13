@@ -11,3 +11,7 @@ type WorkerConfig struct {
 	CloudEvents   envconfig.CloudEventsConfig   `envPrefix:"CLOUD_EVENTS_"`
 	CommandCentre envconfig.CommandCentreConfig `envPrefix:"COMMAND_CENTRE_"`
 }
+
+func (mc *WorkerConfig) LogConfig() envconfig.LogConfig {
+	return mc.Log
+}

@@ -1,20 +1,15 @@
 package envconfig
 
 import (
-	"context"
-	"log/slog"
-	"os"
-
 	"github.com/caarlos0/env/v10"
 )
 
-func ParseEnv[T any](cfg T) T {
+func ParseEnv[T any](cfg T) (T, error) {
 	if err := env.Parse(cfg); err != nil {
-		slog.ErrorContext(context.Background(), "unable to parse environment variables", slog.Any("error", err))
-		os.Exit(1)
+		return cfg, err
 	}
 
-	return cfg
+	return cfg, nil
 }
 
 func FetchSecrets[T any](cfg T) {

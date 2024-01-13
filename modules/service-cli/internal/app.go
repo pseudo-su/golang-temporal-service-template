@@ -4,7 +4,7 @@ import (
 	"log/slog"
 
 	"github.com/pseudo-su/golang-temporal-service-template/modules/service-cli/internal/commands/example"
-	"github.com/pseudo-su/golang-temporal-service-template/modules/service-pkg/logsetup"
+	"github.com/pseudo-su/golang-temporal-service-template/modules/service-pkg/initialise/logsetup"
 	"github.com/urfave/cli/v2"
 )
 

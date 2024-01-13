@@ -11,3 +11,7 @@ type FrontdoorConfig struct {
 	OpenTelemetry envconfig.OpenTelemetryConfig `envPrefix:"OPEN_TELEMETRY_"`
 	Launchdarkly  envconfig.LaunchdarklyConfig  `envPrefix:"LAUNCHDARKLY_"`
 }
+
+func (mc *FrontdoorConfig) LogConfig() envconfig.LogConfig {
+	return mc.Log
+}

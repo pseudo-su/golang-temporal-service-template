@@ -11,9 +11,8 @@ import (
 	"github.com/pseudo-su/golang-temporal-service-template/modules/frontdoor/internal"
 	"github.com/pseudo-su/golang-temporal-service-template/modules/frontdoor/internal/servicechecks"
 	grpc_deephealth_v1 "github.com/pseudo-su/golang-temporal-service-template/modules/service-pkg/deephealth/v1"
-	"github.com/pseudo-su/golang-temporal-service-template/modules/service-pkg/envconfig"
 	"github.com/pseudo-su/golang-temporal-service-template/modules/service-pkg/httpserver"
-	"github.com/pseudo-su/golang-temporal-service-template/modules/service-pkg/logsetup"
+	"github.com/pseudo-su/golang-temporal-service-template/modules/service-pkg/initialise"
 	"github.com/pseudo-su/golang-temporal-service-template/modules/service-pkg/rungroup"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -21,23 +20,16 @@ import (
 	"google.golang.org/grpc/health/grpc_health_v1"
 )
 
-var cfg *internal.FrontdoorConfig
-
-func init() {
-	ctx := context.Background()
-
-	cfg = envconfig.ParseEnv(&internal.FrontdoorConfig{})
-	slog.InfoContext(ctx, "App config loaded", slog.Any("name", cfg.App.Name), slog.Any("env", cfg.App.Env))
-
-	logger := logsetup.NewLogger(
-		logsetup.WithModeStr(cfg.Log.Mode),
-		logsetup.WithLevelStr(cfg.Log.Level),
-	)
-	slog.SetDefault(logger)
-}
-
 func main() {
 	ctx := context.Background()
+
+	cfg, err := initialise.ServiceWithConfig(ctx, &internal.FrontdoorConfig{})
+	if err != nil {
+		slog.ErrorContext(context.Background(), "unable to parse environment variables", slog.Any("error", err))
+		os.Exit(1)
+	}
+
+	slog.InfoContext(ctx, "App config loaded", slog.Any("name", cfg.App.Name), slog.Any("env", cfg.App.Env))
 
 	slog.InfoContext(ctx, "Initialising http server")
 	address := fmt.Sprintf(":%d", cfg.Tcp.Port)
