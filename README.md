@@ -54,7 +54,6 @@ make help;
 make deps.install;
 
 # Fetch devstack containers
-glcoud auth login;
 make devstack.pull;
 
 # Run code verification (static analysis, linting etc)
