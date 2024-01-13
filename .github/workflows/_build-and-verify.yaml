@@ -19,7 +19,7 @@ jobs:
       - name: Setup
         uses: ./.github/actions/setup
         with:
-          go-enabled: false
+          go-enabled: true
           java-enabled: false
           app-deps-enabled: false
           tool-deps-enabled: true
