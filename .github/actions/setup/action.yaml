@@ -6,6 +6,10 @@ inputs:
     description: Setup Golang
     default: 'false'
     required: false
+  go-version:
+    description: Go version
+    default: 1.21
+    required: false
   java-enabled:
     description: Setup Java
     default: 'false'
@@ -50,11 +54,11 @@ runs:
         java --version
 
     # Setup golang
-    - name: Set up Go 1.21
+    - name: Set up Go ${{ inputs.go-version }}
       if: inputs.go-enabled == 'true'
       uses: actions/setup-go@v4
       with:
-        go-version: 1.21
+        go-version: ${{ inputs.go-version }}
         cache-dependency-path: "**/*.sum"
 
     # Tool dependencies
@@ -68,7 +72,7 @@ runs:
           tools/**
           !tools/tools.cfg
           !tools/tools.mk
-        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('tools/tools.cfg', 'tools/tools.mk') }}
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ inputs.go-enabled }}-${{ inputs.go-version }}-${{ hashFiles('tools/tools.cfg', 'tools/tools.mk') }}
 
     - name: Install tool dependencies
       if: inputs.tool-deps-enabled == 'true'
