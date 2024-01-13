@@ -52,6 +52,8 @@ linters-settings:
             desc: not allowed, use slog
           - pkg: "go.uber.org/zap"
             desc: not allowed, use slog
+          - pkg: "istio.io/pkg/log"
+            desc: not allowed, use slog
       error_rules:
         deny:
           - pkg: "github.com/go-errors/errors"

@@ -31,7 +31,6 @@ cp docs/examples/.env.local .
 
 # Copy the recommended vscode settings to your workspace config
 cp .vscode/settings.recommended.json .vscode/settings.json
-cp .vscode/launch.recommended.json .vscode/launch.json
 ```
 
 If you are using `direnv` (recommended), copy the example `.envrc` file.
@@ -53,6 +52,10 @@ make help;
 
 # Install project dependencies (installs dependencies and tools)
 make deps.install;
+
+# Fetch devstack containers
+glcoud auth login;
+make devstack.pull;
 
 # Run code verification (static analysis, linting etc)
 make verify;
@@ -78,10 +81,10 @@ At this point you should have a development version of this API project running 
 You can stop or recreate the devstack using the following commands
 
 ```sh
-# Stop shutdown the docker containers running as part of the devstack
+# Stop shutdown the containers running as part of the devstack
 make devstack.stop
 
-# Delete/reset the devstack, removes all the containers, volumes etc of the docker-compose stack
+# Delete/reset the devstack, removes all the containers, volumes etc of the compose stack
 make devstack.clean
 ```
 

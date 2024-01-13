@@ -43,21 +43,13 @@ jobs:
     needs:
       - workflow-variables
 
-  release-dryrun-dev:
-    name: dryrun-dev
+  release-dryrun-qa:
+    name: dryrun-qa
     uses: ./.github/workflows/_release-dryrun.yaml
     needs:
       - workflow-variables
     with:
-      env: dev
-
-  release-dryrun-test:
-    name: dryrun-test
-    uses: ./.github/workflows/_release-dryrun.yaml
-    needs:
-      - workflow-variables
-    with:
-      env: test
+      env: qa
 
   release-dryrun-prod:
     name: dryrun-prod
@@ -67,23 +59,12 @@ jobs:
     with:
       env: prod
 
-  release-dev:
-    name: release-dev
+  release-qa:
+    name: release-qa
     uses: ./.github/workflows/_release.yaml
     needs:
       - workflow-variables
       - package-and-publish
     with:
-      env: dev
-      smoke-tests-enabled: true
-
-  release-test:
-    name: release-test
-    uses: ./.github/workflows/_release.yaml
-    needs:
-      - workflow-variables
-      - package-and-publish
-      - release-dev
-    with:
-      env: test
+      env: qa
       smoke-tests-enabled: true

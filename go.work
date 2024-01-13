@@ -2,6 +2,8 @@ go 1.21
 
 use (
 	./modules/frontdoor
+	./modules/mocks
+	./modules/service-cli
 	./modules/service-pkg
 	./modules/testing-tools
 	./modules/worker

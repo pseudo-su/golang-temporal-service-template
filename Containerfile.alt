@@ -1,0 +1,60 @@
+# TODO: This file is only needed for the time being because the version of buildah used
+# in github actions is so old.
+# https://github.com/redhat-actions/buildah-build/issues/116#issuecomment-1890340223
+
+FROM golang:1.21-alpine AS builder-base
+
+WORKDIR /workdir
+RUN mkdir /builddir
+
+# Certificates
+
+RUN apk --update upgrade
+RUN apk add ca-certificates
+RUN update-ca-certificates
+
+# Build and include grpc-health-probe
+RUN env GOBIN=/builddir go install github.com/grpc-ecosystem/grpc-health-probe@latest
+
+# Copy across
+COPY go.work go.work.sum ./
+COPY modules/frontdoor/go.mod modules/frontdoor/go.sum ./modules/frontdoor/
+COPY modules/mocks/go.mod modules/mocks/go.sum ./modules/mocks/
+COPY modules/service-cli/go.mod modules/service-cli/go.sum ./modules/service-cli/
+COPY modules/service-pkg/go.mod modules/service-pkg/go.sum ./modules/service-pkg/
+COPY modules/testing-tools/go.mod modules/testing-tools/go.sum ./modules/testing-tools/
+COPY modules/worker/go.mod modules/worker/go.sum ./modules/worker/
+COPY test-harness/go.mod test-harness/go.sum ./test-harness/
+
+# Install go application dependencies
+RUN go mod download -x
+# TODO: https://github.com/redhat-actions/buildah-build/issues/116#issuecomment-1890340223
+# RUN --mount=type=cache,target=/go/pkg/mod/ \
+#     go mod download -x
+
+FROM builder-base AS builder
+
+ARG entrypoint
+ARG gobuildopts=
+
+ADD . .
+RUN CGO_ENABLED=0 go build ${gobuildopts} -v -o /builddir/service ./$entrypoint
+# TODO: https://github.com/redhat-actions/buildah-build/issues/116#issuecomment-1890340223
+# RUN --mount=type=cache,target=/go/pkg/mod/ \
+#     --mount=type=cache,target=/root/.cache/go-build \
+#     CGO_ENABLED=0 go build ${gobuildopts} -v -o /builddir/service ./$entrypoint
+
+FROM gcr.io/distroless/static AS runtime-base
+
+USER nonroot
+
+COPY --from=builder-base /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+COPY --from=builder-base /builddir/grpc-health-probe /bin
+
+FROM runtime-base AS runtime
+
+USER nonroot
+
+COPY --from=builder /builddir/service /bin
+
+ENTRYPOINT ["/bin/service"]

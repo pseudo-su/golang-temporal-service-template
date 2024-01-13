@@ -2,6 +2,7 @@
   // https://go.microsoft.com/fwlink/?LinkId=827846
   "recommendations": [
     "golang.go",
+    "joselitofilho.ginkgotestexplorer",
     "mikestead.dotenv",
     "mechatroner.rainbow-csv",
     "editorconfig.editorconfig",
