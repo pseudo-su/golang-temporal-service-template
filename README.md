@@ -31,6 +31,7 @@ cp docs/examples/.env.local .
 
 # Copy the recommended vscode settings to your workspace config
 cp .vscode/settings.recommended.json .vscode/settings.json
+cp .vscode/launch.recommended.json .vscode/launch.json
 ```
 
 If you are using `direnv` (recommended), copy the example `.envrc` file.
