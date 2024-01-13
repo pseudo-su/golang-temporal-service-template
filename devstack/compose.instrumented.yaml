@@ -1,7 +1,8 @@
 services:
   component_frontdoor:
     build:
-      target: runtime-instrumented
+      args:
+        - gobuildopts=-cover
     environment:
       - GOCOVERDIR=/app/covdatafiles
     volumes:
@@ -9,7 +10,8 @@ services:
 
   component_worker:
     build:
-      target: runtime-instrumented
+      args:
+        - gobuildopts=-cover
     environment:
       - GOCOVERDIR=/app/covdatafiles
     volumes:

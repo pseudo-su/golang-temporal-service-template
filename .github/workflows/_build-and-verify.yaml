@@ -19,9 +19,9 @@ jobs:
       - name: Setup
         uses: ./.github/actions/setup
         with:
-          go-enabled: true
-          java-enabled: true
-          app-deps-enabled: true
+          go-enabled: false
+          java-enabled: false
+          app-deps-enabled: false
           tool-deps-enabled: true
 
   verify:
@@ -112,6 +112,9 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - cache-setup
+    env:
+      # TODO: use podman compose https://github.com/redhat-actions/buildah-build/issues/116#issuecomment-1890340223
+      DEVSTACK_COMPOSE_TOOL: docker-compose
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -133,10 +136,12 @@ jobs:
       - name: Run integration tests
         shell: bash
         run: |
-          make test.integration
+          make test.integration.report
 
       - name: Capture coverage reports
         shell: bash
+        env:
+          TEST_SUITE: test.integration
         run: |
           make devstack.capture-coverage-reports
 

@@ -34,3 +34,6 @@ __debug_bin*
 /*.session.sql
 
 /reports/**
+
+# Test artifacts
+/test-harness/suites/**/ginkgo.report

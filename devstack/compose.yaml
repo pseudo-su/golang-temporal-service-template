@@ -5,9 +5,12 @@ services:
     image: tianon/true
     restart: "no"
     depends_on:
-      - components
-      - deps
-      - tools
+      components:
+        condition: service_completed_successfully
+      deps:
+        condition: service_completed_successfully
+      tools:
+        condition: service_completed_successfully
 
   components:
     image: tianon/true
@@ -17,15 +20,15 @@ services:
         condition: service_healthy
       component_worker:
         condition: service_healthy
+
   deps:
     image: tianon/true
     restart: "no"
     depends_on:
-      # TODO: fix pubsub
-      # dep_pubsub:
-      #   condition: service_started
-      # dep_pubsub_creator:
-      #   condition: service_completed_successfully
+      dep_pubsub:
+        condition: service_healthy
+      dep_pubsub_creator:
+        condition: service_completed_successfully
       dep_temporal-db:
         condition: service_started
       dep_temporal-elasticsearch:
@@ -38,6 +41,8 @@ services:
         condition: service_started
       dep_telemetry-jaeger:
         condition: service_started
+      dep_mocks:
+        condition: service_started
 
   tools:
     image: tianon/true
@@ -49,16 +54,17 @@ services:
   ### COMPONENTS
 
   component_frontdoor:
+    depends_on:
+      dep_temporal-startupscripts:
+        condition: service_completed_successfully
     build:
       context: ..
-      dockerfile: Dockerfile
+      dockerfile: Containerfile
       args:
         - entrypoint=modules/frontdoor/cmd/frontdoor
     env_file:
       - ./components/frontdoor/.env
     environment:
-      - HTTPS_PROXY=
-      - https_proxy=
       - GOCOVERDIR=/app/covdatafiles
     ports:
       - 9090:8080
@@ -76,14 +82,12 @@ services:
         condition: service_completed_successfully
     build:
       context: ..
-      dockerfile: Dockerfile
+      dockerfile: Containerfile
       args:
         - entrypoint=modules/worker/cmd/worker
     env_file:
       - ./components/worker/.env
     environment:
-      - HTTPS_PROXY=
-      - https_proxy=
       - GOCOVERDIR=/app/covdatafiles
     ports:
       - 9091:8080
@@ -97,23 +101,13 @@ services:
 
   ### DEPENDENCIES
 
-  # TODO: make pubsub emulator work
   dep_pubsub:
-    image: gcr.io/google.com/cloudsdktool/google-cloud-cli:372.0.0-emulators
+    image: gcr.io/google.com/cloudsdktool/google-cloud-cli:458.0.1-emulators
     restart: unless-stopped
-    environment:
-      - HTTP_PROXY=
-      - HTTPS_PROXY=
-      - http_proxy=
-      - https_proxy=
-      - PUBSUB_PORT=8086
-      - PUBSUB_PROJECT=
-      - PUBSUB_TOPIC=
-      - PUBSUB_SUBSCRIPTION=
+    environment: {}
     ports:
       - 8086:8086
-    entrypoint:
-      - gcloud beta emulators pubsub start
+    command: gcloud beta emulators pubsub start --host-port=0.0.0.0:8086
     healthcheck:
       test: timeout 10s bash -c ':> /dev/tcp/127.0.0.1/8086' || exit 1
       interval: 2s
@@ -126,17 +120,15 @@ services:
         condition: service_healthy
     image: alpine/curl
     restart: on-failure
-    environment:
-      - HTTP_PROXY=
-      - HTTPS_PROXY=
-      - http_proxy=
-      - https_proxy=
+    environment: {}
     entrypoint:
       - /bin/sh
       - -c
       - |
-        curl -X PUT http://dep_pubsub:8086/v1/projects/devstack/topics/service.topic
-        curl -X PUT http://dep_pubsub:8086/v1/projects/devstack/subscriptions/service.subscription -H 'content-type: application/json' --data '{"topic":"projects/devstack/topics/service.topic"}'
+        curl -X PUT http://dep_pubsub:8086/v1/projects/devstack/topics/devstackcheck.topic
+
+        curl -X PUT http://dep_pubsub:8086/v1/projects/devstack/topics/serviceevents.topic
+        curl -X PUT http://dep_pubsub:8086/v1/projects/devstack/subscriptions/serviceevents.subscription -H 'content-type: application/json' --data '{"topic":"projects/devstack/topics/serviceevents.topic"}'
 
   dep_temporal-db:
     image: postgres:12-alpine
@@ -153,10 +145,6 @@ services:
 
   dep_temporal-elasticsearch:
     environment:
-      - HTTP_PROXY=
-      - HTTPS_PROXY=
-      - http_proxy=
-      - https_proxy=
       - cluster.routing.allocation.disk.threshold_enabled=true
       - cluster.routing.allocation.disk.watermark.low=512mb
       - cluster.routing.allocation.disk.watermark.high=256mb
@@ -182,10 +170,6 @@ services:
       dep_temporal-db:
         condition: service_healthy
     environment:
-      - HTTP_PROXY=
-      - HTTPS_PROXY=
-      - http_proxy=
-      - https_proxy=
       - DB=postgresql
       - DB_PORT=5432
       - POSTGRES_USER=temporal
@@ -207,10 +191,6 @@ services:
     image: temporalio/admin-tools:1.20.0
     environment:
       - TEMPORAL_CLI_ADDRESS=dep_temporal-server:7233
-      - HTTP_PROXY=
-      - HTTPS_PROXY=
-      - http_proxy=
-      - https_proxy=
     depends_on:
       dep_temporal-elasticsearch:
         condition: service_healthy
@@ -227,13 +207,10 @@ services:
       - ./deps/opentelemetry-collector/config.yaml:/etc/otelcol/config.yaml
     ports:
       - 4317:4317   # OTLP gRPC receiver
-    environment:
-      - HTTP_PROXY=
-      - HTTPS_PROXY=
-      - http_proxy=
-      - https_proxy=
+    environment: {}
     depends_on:
-      - dep_telemetry-jaeger
+      dep_telemetry-jaeger:
+        condition: service_started
 
   dep_telemetry-jaeger:
     image: jaegertracing/all-in-one:1
@@ -245,6 +222,18 @@ services:
     environment:
       - COLLECTOR_OTLP_ENABLED=true
 
+  dep_mocks:
+    build:
+      context: ..
+      dockerfile: Containerfile
+      args:
+        - entrypoint=modules/mocks/cmd/mocks
+    env_file:
+      - ./deps/mocks/.env
+    environment: {}
+    ports:
+      - "9999:9999"
+
   ### TOOLS
 
   tool_temporal-ui:
@@ -253,7 +242,5 @@ services:
     environment:
       - TEMPORAL_ADDRESS=dep_temporal-server:7233
       - TEMPORAL_UI_PORT=8088
-      - HTTPS_PROXY=
-      - https_proxy=
     ports:
       - 8088:8088

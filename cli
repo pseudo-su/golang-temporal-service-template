@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+go run modules/service-cli/cmd/cli/main.go $@

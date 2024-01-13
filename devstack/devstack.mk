@@ -1,47 +1,60 @@
 ### Devstack
+
 DEVSTACK_TARGET ?= all
-DEVSTACK_DOCKER_COMPOSE := docker-compose -f ./devstack/docker-compose.yaml
-DEVSTACK_DOCKER_COMPOSE_INSTRUMENTED := docker-compose -f ./devstack/docker-compose.yaml  -f ./devstack/instrumented.docker-compose.yaml
+DEVSTACK_COMPOSE_TOOL ?= podman compose
+
+DEVSTACK_COMPOSE := $(DEVSTACK_COMPOSE_TOOL) -f ./devstack/compose.yaml
+DEVSTACK_COMPOSE_INSTRUMENTED := $(DEVSTACK_COMPOSE_TOOL) -f ./devstack/compose.yaml  -f ./devstack/compose.instrumented.yaml
+
+## Pull all devstack containers
+devstack.pull:
+	$(DEVSTACK_COMPOSE) pull
+.PHONY: devstack.pull
+
+## Build all devstack containers
+devstack.build:
+	$(DEVSTACK_COMPOSE) build
+.PHONY: devstack.build
 
 ## Start the devstack
 devstack.start:
-	$(DEVSTACK_DOCKER_COMPOSE) --verbose up --build -d --remove-orphans $(DEVSTACK_TARGET)
+	$(DEVSTACK_COMPOSE) --verbose up --build -d --remove-orphans $(DEVSTACK_TARGET)
 .PHONY: devstack.start
 
 ## Start the devstack with instrumented binaries for application components
 devstack.start-instrumented:
 	git clean -f -x "./devstack/components/**/coverage/*"
-	$(DEVSTACK_DOCKER_COMPOSE_INSTRUMENTED) up --build -d --remove-orphans $(DEVSTACK_TARGET)
+	$(DEVSTACK_COMPOSE_INSTRUMENTED) up --build -d --remove-orphans $(DEVSTACK_TARGET)
 .PHONY: devstack.start-instrumented
 
 # Restart all devstack containers
 devstack.restart:
-	$(DEVSTACK_DOCKER_COMPOSE) restart
+	$(DEVSTACK_COMPOSE) restart
 .PHONY: devstack.restart
 
 # Restart devstack containers for application component
 devstack.restart.components:
-	./devstack/docker-compose-restart-services.sh component_
+	./devstack/compose-restart-services.sh component_
 .PHONY: devstack.restart.components
 
 # Restart devstack containers for application dependencies
 devstack.restart.deps:
-	./devstack/docker-compose-restart-services.sh dep_
+	./devstack/compose-restart-services.sh dep_
 .PHONY: devstack.restart.deps
 
 # Restart devstack containers for development tools
 devstack.restart.tools:
-	./devstack/docker-compose-restart-services.sh tool_
+	./devstack/compose-restart-services.sh tool_
 .PHONY: devstack.restart.tools
 
 ## Stop the devstack
 devstack.stop:
-	$(DEVSTACK_DOCKER_COMPOSE) down --remove-orphans
+	$(DEVSTACK_COMPOSE) down --remove-orphans
 .PHONY: devstack.stop
 
 ## Clean/reset the devstack
 devstack.clean:
-	$(DEVSTACK_DOCKER_COMPOSE) down --remove-orphans --volumes --rmi local
+	$(DEVSTACK_COMPOSE) down --remove-orphans --volumes --rmi local
 .PHONY: devstack.clean
 
 ## Reload the devstack
@@ -54,19 +67,44 @@ devstack.recreate: devstack.clean devstack.start
 
 ## show status
 devstack.status:
-	$(DEVSTACK_DOCKER_COMPOSE) ps
+	$(DEVSTACK_COMPOSE) ps
 .PHONY: devstack.status
 
 ## Capture devstack coverage reports from application components
 devstack.capture-coverage-reports: devstack.restart.components
-	go tool covdata textfmt -i=devstack/components/frontdoor/coverage -o reports/test.integration.frontdoor.coverage.out
-	go tool covdata textfmt -i=devstack/components/worker/coverage -o reports/test.integration.worker.coverage.out
+	if [ -z "${TEST_SUITE}" ]; then echo "TEST_SUITE environment variable not set"; exit 1; fi
 
-	go tool cover -html=reports/test.integration.frontdoor.coverage.out -o reports/test.integration.frontdoor.coverage.html
-	go tool cover -html=reports/test.integration.worker.coverage.out -o reports/test.integration.worker.coverage.html
+	go tool covdata textfmt -i=devstack/components/frontdoor/coverage -o reports/${TEST_SUITE}.devstack.frontdoor.coverage.out
+	go tool covdata textfmt -i=devstack/components/worker/coverage -o reports/${TEST_SUITE}.devstack.worker.coverage.out
+
+	go tool cover -html=reports/${TEST_SUITE}.devstack.frontdoor.coverage.out -o reports/${TEST_SUITE}.devstack.frontdoor.coverage.html
+	go tool cover -html=reports/${TEST_SUITE}.devstack.worker.coverage.out -o reports/${TEST_SUITE}.devstack.worker.coverage.html
 .PHONY: devstack.capture-coverage-reports
 
-## show logs
-devstack.logs:
-	$(DEVSTACK_DOCKER_COMPOSE) logs --follow
+### Devstack logs
+
+LOG_TARGET ?= devstack-component_worker
+DEVSTACK_LOG_TARGET ?= $(LOG_TARGET)
+
+devstack.logs: devstack.logs.follow
 .PHONY: devstack.logs
+
+## Export devstack logs
+devstack.logs.export:
+	$(DEVSTACK_COMPOSE) logs
+.PHONY: devstack.logs.export
+
+## Add devstack logs to reports/
+devstack.logs.report:
+	$(DEVSTACK_COMPOSE) logs --no-color > reports/devstack.log
+.PHONY: devstack.logs.report
+
+# Follow devstack logs
+devstack.logs.follow:
+	$(DEVSTACK_COMPOSE) logs --follow
+.PHONY: devstack.logs.follow
+
+## Follow devstack filtered logs
+devstack.logs.target:
+	podman logs --follow $(shell podman ps -aqf "name=$(DEVSTACK_LOG_TARGET)")
+.PHONY: devstack.logs.target

@@ -1,7 +1,3 @@
-define mark_target_up_to_date
-	($(MAKE) --question $(1) > /dev/null 2>&1 ; if [ $$? -ne 0 ] ; then make --touch $(1); fi)
-endef
-
 tools/device-info.cfg: tools/device-info.sh
 	./tools/device-info.sh > tools/device-info.cfg
 
@@ -73,3 +69,10 @@ tools/protoc-gen-gapi-lint:
 
 tools/api-linter: tools/tools.cfg
 	. ./tools/tools.cfg && env GOBIN=$${PWD}/tools go install github.com/googleapis/api-linter/cmd/api-linter@v$${googleapis_api_linter}
+
+tools/temporal: tools/tools.cfg tools/device-info.cfg
+	. ./tools/tools.cfg && . ./tools/device-info.cfg && curl -sfL https://github.com/temporalio/cli/releases/download/v$${temporal_cli}/temporal_cli_$${temporal_cli}_$${device_platform}_$${device_architecture}.tar.gz > tools/temporal.tar.gz
+	tar -xvzf ./tools/temporal.tar.gz temporal
+	rm ./tools/temporal.tar.gz
+	mv -f temporal ./tools
+	touch tools/temporal
