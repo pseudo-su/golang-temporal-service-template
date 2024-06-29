@@ -26,26 +26,25 @@ func (s *HttpServer) ListenAndServe(interruptCh <-chan interface{}) error {
 }
 
 func (s *HttpServer) Serve(listener net.Listener, interruptCh <-chan interface{}) error {
-	if s.opts.useEmbeddedGrpcGateway {
-		go func() {
-			if err := s.combinedServer.Serve(listener); err != nil && err != grpc.ErrServerStopped && err != http.ErrServerClosed {
-				slog.ErrorContext(context.Background(), "shutdown error", slog.Any("error", err))
-			}
-		}()
-	} else {
-		go func() {
-			if err := http.Serve(listener, h2c.NewHandler(s.connectServer, &http2.Server{})); err != nil && err != grpc.ErrServerStopped && err != http.ErrServerClosed {
-				slog.ErrorContext(context.Background(), "shutdown error", slog.Any("error", err))
-			}
-		}()
+	// https://github.com/golang/go/issues/26682#issuecomment-431904745
+	h2s := &http2.Server{}
+	h1s := &http.Server{}
+	err := http2.ConfigureServer(h1s, h2s)
+	if err != nil {
+		return err
 	}
+	go func() {
+		if err := http.Serve(listener, h2c.NewHandler(s.connectServer, h2s)); err != nil && err != grpc.ErrServerStopped && err != http.ErrServerClosed {
+			slog.ErrorContext(context.Background(), "shutdown error", slog.Any("error", err))
+		}
+	}()
 
 	<-interruptCh
 
 	gracefullCtx, cancelShutdown := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancelShutdown()
 
-	if err := s.combinedServer.Shutdown(gracefullCtx); err != nil {
+	if err := h1s.Shutdown(gracefullCtx); err != nil {
 		return err
 	}
 

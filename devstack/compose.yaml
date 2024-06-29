@@ -233,6 +233,11 @@ services:
     environment: {}
     ports:
       - "9999:9999"
+    healthcheck:
+      test: [ "CMD", "/bin/grpc-health-probe", "-addr=:9999", "-connect-timeout=100ms", "-rpc-timeout=150ms" ]
+      interval: 3s
+      timeout: 30s
+      retries: 10
 
   ### TOOLS
 

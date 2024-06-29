@@ -23,7 +23,7 @@ func main() {
 	fd, err := internal.NewFrontdoor(ctx, cfg)
 	if err != nil {
 		slog.ErrorContext(ctx, "unable to create frontdoor", slog.Any("error", err))
-		os.Exit(0)
+		os.Exit(1)
 	}
 
 	fd.Run(ctx)

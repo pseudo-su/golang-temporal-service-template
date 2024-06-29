@@ -31,9 +31,8 @@ func main() {
 		ctx,
 		httpserver.WithAddress(address),
 		httpserver.WithReflection(),
-		httpserver.WithUnaryInterceptors(),
-		httpserver.WithStreamInterceptors(),
-		// httpserver.WithEmbeddedGrpcGateway(),
+		// httpserver.WithUnaryInterceptors(),
+		// httpserver.WithStreamInterceptors(),
 	)
 	if err != nil {
 		slog.ErrorContext(ctx, "error creating server", slog.Any("error", err))
@@ -43,22 +42,6 @@ func main() {
 	httpServer.RegisterConnectHandler(func(connectServer *http.ServeMux) {
 		connectServer.Handle(grpchealth.NewHandler(grpchealth.NewStaticChecker()))
 	})
-	// healthServer := health.NewServer()
-	// httpServer.RegisterGrpcServer(func(s *grpc.Server) {
-	// 	grpc_health_v1.RegisterHealthServer(s, healthServer)
-	// })
-	// err = httpServer.RegisterGatewayHandlers(func(grpcGatewayServer *runtime.ServeMux) error {
-	// 	opts := []grpc.DialOption{
-	// 		grpc.WithTransportCredentials(insecure.NewCredentials()),
-	// 	}
-	// 	return errors.Join(
-	// 		grpc_deephealth_v1.RegisterDeepHealthHandlerFromEndpoint(ctx, grpcGatewayServer, address, opts),
-	// 	)
-	// })
-	// if err != nil {
-	// 	slog.ErrorContext(ctx, "error registering gateway handlers", slog.Any("error", err))
-	// 	os.Exit(1)
-	// }
 
 	// Run server
 	rg := rungroup.NewRunGroup(ctx)

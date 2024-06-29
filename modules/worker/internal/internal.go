@@ -7,17 +7,18 @@ import (
 	"net/http"
 
 	"connectrpc.com/grpchealth"
-	"github.com/pseudo-su/golang-temporal-service-template/modules/frontdoor/internal/servicechecks"
-	"github.com/pseudo-su/golang-temporal-service-template/modules/service-pkg/deephealth/v1/deephealth_v1connect"
 	"github.com/pseudo-su/golang-temporal-service-template/modules/service-pkg/httpserver"
 	"github.com/pseudo-su/golang-temporal-service-template/modules/service-pkg/rungroup"
+	"go.temporal.io/sdk/client"
+	"go.temporal.io/sdk/worker"
 )
 
-type Frontdoor struct {
+type Worker struct {
 	httpServer *httpserver.HttpServer
+	tworker    worker.Worker
 }
 
-func NewFrontdoor(ctx context.Context, cfg *FrontdoorConfig) (*Frontdoor, error) {
+func NewWorker(ctx context.Context, cfg *WorkerConfig) (*Worker, error) {
 	slog.InfoContext(ctx, "Initialising http server")
 	address := fmt.Sprintf(":%d", cfg.Tcp.Port)
 	httpServer, err := httpserver.New(
@@ -31,24 +32,48 @@ func NewFrontdoor(ctx context.Context, cfg *FrontdoorConfig) (*Frontdoor, error)
 		return nil, fmt.Errorf("error creating server %w", err)
 	}
 
-	deepHealthConnectServer := servicechecks.NewDeepHealthConnectServer()
 	httpServer.RegisterConnectHandler(func(connectServer *http.ServeMux) {
-		p, h := deephealth_v1connect.NewDeepHealthHandler(deepHealthConnectServer)
-		connectServer.Handle(p, h)
 		connectServer.Handle(grpchealth.NewHandler(grpchealth.NewStaticChecker()))
 	})
 
-	return &Frontdoor{
+	// load secrets from gsm - not yet
+
+	slog.InfoContext(ctx, "Initialising temporal client")
+	tq := cfg.Temporal.TaskQueue
+	tc, err := client.Dial(client.Options{
+		HostPort:  cfg.Temporal.Uri.AsString(),
+		Namespace: cfg.Temporal.Namespace,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("error creating temporal client %w", err)
+	}
+
+	slog.InfoContext(ctx, "Initialising temporal worker")
+	w := worker.New(tc, tq, worker.Options{})
+
+	// register workflows - not yet
+
+	// register activities - not yet
+
+	return &Worker{
 		httpServer: httpServer,
+		tworker:    w,
 	}, nil
 }
 
-func (fd *Frontdoor) Run(ctx context.Context) {
+func (wk *Worker) Run(ctx context.Context) {
 	// Run server
 	rg := rungroup.NewRunGroup(ctx)
 	rg.Run(func(ctx context.Context) {
+		slog.InfoContext(ctx, "starting worker")
+		if err := wk.tworker.Run(rungroup.InterruptChannel(ctx)); err != nil {
+			slog.ErrorContext(ctx, "worker error", slog.Any("error", err))
+		}
+		slog.InfoContext(ctx, "worker stopped")
+	})
+	rg.Run(func(ctx context.Context) {
 		slog.InfoContext(ctx, "starting http server")
-		if err := fd.httpServer.ListenAndServe(rungroup.InterruptChannel(ctx)); err != nil {
+		if err := wk.httpServer.ListenAndServe(rungroup.InterruptChannel(ctx)); err != nil {
 			slog.ErrorContext(ctx, "http server error", slog.Any("error", err))
 		}
 		slog.InfoContext(ctx, "http server stopped")
