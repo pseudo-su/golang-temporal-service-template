@@ -44,6 +44,9 @@ tools/protoc-gen-buf-breaking: tools/tools.cfg
 tools/protoc-gen-buf-lint: tools/tools.cfg
 	. ./tools/tools.cfg && env GOBIN=$${PWD}/tools go install github.com/bufbuild/buf/cmd/protoc-gen-buf-lint@v$${protoc_gen_buf_lint}
 
+tools/protoc-gen-connect-go: tools/tools.cfg
+	. ./tools/tools.cfg && env GOBIN=$${PWD}/tools go install connectrpc.com/connect/cmd/protoc-gen-connect-go@v$${protoc_gen_connect_go}
+
 tools/protoc-gen-gapi-lint:
 	. ./tools/tools.cfg && env GOBIN=$${PWD}/tools go install github.com/protoc-extensions/protoc-gen-gapi-lint/cmd/protoc-gen-gapi-lint@v$${protoc_gen_gapi_lint}
 

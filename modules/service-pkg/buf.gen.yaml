@@ -5,6 +5,11 @@ plugins:
     out: .
     opt:
       - paths=source_relative
+  - plugin: connect-go
+    path: ../../tools/protoc-gen-connect-go
+    out: .
+    opt:
+      - paths=source_relative
   - plugin: go-grpc
     path: ../../tools/protoc-gen-go-grpc
     out: .

@@ -20,49 +20,40 @@ deps.app.install:
 
 ## Update app dependencies
 deps.app.update:
-	@for dir in $(ALL_PATHS); do \
-					echo "Running go get -u ./... in $$dir"; \
-					(cd $$dir && go get -u ./... ); \
-	done
-	rm -f go.work.sum
-	go work sync
+	go get -u ./...
 	go mod download
 .PHONY: deps.app.update
 
 ## Tidy app dependencies
 deps.app.tidy:
-	@for dir in $(ALL_PATHS); do \
-					echo "Running go get ./... in $$dir"; \
-					(cd $$dir && go get ./... || true); \
-	done
-	rm -f go.work.sum
-	go work sync
+	go get ./...
 	go mod download
 .PHONY: deps.app.tidy
 
 ## Install tool dependencies
 deps.tools.install: \
-	tools/golangci-lint \
-	tools/plantuml.jar \
-	tools/godotenv \
-	tools/go-junit-report \
-	tools/mockery \
-	tools/goimports \
-	tools/workflowcheck \
 	tools/actionlint \
-	tools/ginkgo \
-	tools/editorconfig-checker \
+	tools/api-linter \
 	tools/buf \
+	tools/editorconfig-checker \
+	tools/ginkgo \
+	tools/go-junit-report \
+	tools/godotenv \
+	tools/goimports \
+	tools/golangci-lint \
+	tools/mockery \
+	tools/plantuml.jar \
 	tools/protoc \
+	tools/protoc-gen-buf-breaking \
+	tools/protoc-gen-buf-lint \
+	tools/protoc-gen-connect-go \
+	tools/protoc-gen-gapi-lint \
 	tools/protoc-gen-go \
 	tools/protoc-gen-go-grpc \
 	tools/protoc-gen-grpc-gateway \
-	tools/protoc-gen-buf-breaking \
-	tools/protoc-gen-buf-lint \
 	tools/protoc-gen-openapi \
-	tools/protoc-gen-gapi-lint \
-	tools/api-linter \
-	tools/temporal
+	tools/temporal \
+	tools/workflowcheck
 .PHONY: deps.tools.install
 
 ## Update tool dependencies
@@ -140,12 +131,7 @@ codegen.docs:
 
 ## Run Golang code generation
 codegen.go:
-# Open issue for using go.work w/ `go generate ./...`
-# https://github.com/golang/go/issues/56098
-	@for dir in $(ALL_PATHS); do \
-					echo "Running go generate in $$dir"; \
-					(cd $$dir && go generate ./... ); \
-	done
+	go generate ./...
 .PHONY: codegen.go
 
 ## Run Golang code generation
