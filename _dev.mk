@@ -50,8 +50,6 @@ deps.tools.install: \
 	tools/protoc-gen-gapi-lint \
 	tools/protoc-gen-go \
 	tools/protoc-gen-go-grpc \
-	tools/protoc-gen-grpc-gateway \
-	tools/protoc-gen-openapi \
 	tools/temporal \
 	tools/workflowcheck
 .PHONY: deps.tools.install
@@ -92,7 +90,7 @@ verify.go.fix:
 
 # Run static analysis on .editorconfig rules
 verify.editorconfig:
-	./tools/editorconfig-checker --exclude modules/service-pkg/openapi.yaml
+	./tools/editorconfig-checker
 .PHONY: verify.editorconfig
 
 ## Verify using temporal workflow static analysis

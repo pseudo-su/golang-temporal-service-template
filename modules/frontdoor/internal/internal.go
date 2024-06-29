@@ -1,30 +1,23 @@
-package main
+package internal
 
 import (
 	"context"
 	"fmt"
 	"log/slog"
 	"net/http"
-	"os"
 
 	"connectrpc.com/grpchealth"
-	"github.com/pseudo-su/golang-temporal-service-template/modules/mocks/internal"
+	"github.com/pseudo-su/golang-temporal-service-template/modules/frontdoor/internal/servicechecks"
+	"github.com/pseudo-su/golang-temporal-service-template/modules/service-pkg/deephealth/v1/deephealth_v1connect"
 	"github.com/pseudo-su/golang-temporal-service-template/modules/service-pkg/httpserver"
-	"github.com/pseudo-su/golang-temporal-service-template/modules/service-pkg/initialise"
 	"github.com/pseudo-su/golang-temporal-service-template/modules/service-pkg/rungroup"
 )
 
-func main() {
-	ctx := context.Background()
+type Frontdoor struct {
+	httpServer *httpserver.HttpServer
+}
 
-	cfg, err := initialise.ServiceWithConfig(ctx, &internal.MocksConfig{})
-	if err != nil {
-		slog.ErrorContext(context.Background(), "unable to parse environment variables", slog.Any("error", err))
-		os.Exit(1)
-	}
-
-	slog.InfoContext(ctx, "App config loaded", slog.Any("name", cfg.App.Name), slog.Any("env", cfg.App.Env))
-
+func NewFrontdoor(ctx context.Context, cfg *FrontdoorConfig) (*Frontdoor, error) {
 	slog.InfoContext(ctx, "Initialising http server")
 	address := fmt.Sprintf(":%d", cfg.Tcp.Port)
 	httpServer, err := httpserver.New(
@@ -36,16 +29,20 @@ func main() {
 		// httpserver.WithEmbeddedGrpcGateway(),
 	)
 	if err != nil {
-		slog.ErrorContext(ctx, "error creating server", slog.Any("error", err))
-		os.Exit(1)
+		return nil, fmt.Errorf("error creating server %w", err)
 	}
 
+	// healthServer := health.NewServer()
+	// deepHealthGrpcServer := servicechecks.NewDeepHealthGrpcServer()
+	deepHealthConnectServer := servicechecks.NewDeepHealthConnectServer()
 	httpServer.RegisterConnectHandler(func(connectServer *http.ServeMux) {
+		p, h := deephealth_v1connect.NewDeepHealthHandler(deepHealthConnectServer)
+		connectServer.Handle(p, h)
 		connectServer.Handle(grpchealth.NewHandler(grpchealth.NewStaticChecker()))
 	})
-	// healthServer := health.NewServer()
 	// httpServer.RegisterGrpcServer(func(s *grpc.Server) {
 	// 	grpc_health_v1.RegisterHealthServer(s, healthServer)
+	// 	grpc_deephealth_v1.RegisterDeepHealthServer(s, deepHealthGrpcServer)
 	// })
 	// err = httpServer.RegisterGatewayHandlers(func(grpcGatewayServer *runtime.ServeMux) error {
 	// 	opts := []grpc.DialOption{
@@ -56,20 +53,22 @@ func main() {
 	// 	)
 	// })
 	// if err != nil {
-	// 	slog.ErrorContext(ctx, "error registering gateway handlers", slog.Any("error", err))
-	// 	os.Exit(1)
+	// 	return nil, fmt.Errorf("error registering gateway handlers %w", err)
 	// }
+	return &Frontdoor{
+		httpServer: httpServer,
+	}, nil
+}
 
+func (fd *Frontdoor) Run(ctx context.Context) {
 	// Run server
 	rg := rungroup.NewRunGroup(ctx)
 	rg.Run(func(ctx context.Context) {
 		slog.InfoContext(ctx, "starting http server")
-		if err := httpServer.ListenAndServe(rungroup.InterruptChannel(ctx)); err != nil {
+		if err := fd.httpServer.ListenAndServe(rungroup.InterruptChannel(ctx)); err != nil {
 			slog.ErrorContext(ctx, "http server error", slog.Any("error", err))
 		}
 		slog.InfoContext(ctx, "http server stopped")
 	})
 	rg.Wait()
-	slog.InfoContext(ctx, "clean shutdown")
-	os.Exit(0)
 }

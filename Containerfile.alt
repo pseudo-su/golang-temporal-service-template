@@ -17,14 +17,7 @@ RUN update-ca-certificates
 RUN env GOBIN=/builddir go install github.com/grpc-ecosystem/grpc-health-probe@latest
 
 # Copy across
-COPY go.work go.work.sum ./
-COPY modules/frontdoor/go.mod modules/frontdoor/go.sum ./modules/frontdoor/
-COPY modules/mocks/go.mod modules/mocks/go.sum ./modules/mocks/
-COPY modules/service-cli/go.mod modules/service-cli/go.sum ./modules/service-cli/
-COPY modules/service-pkg/go.mod modules/service-pkg/go.sum ./modules/service-pkg/
-COPY modules/testing-tools/go.mod modules/testing-tools/go.sum ./modules/testing-tools/
-COPY modules/worker/go.mod modules/worker/go.sum ./modules/worker/
-COPY test-harness/go.mod test-harness/go.sum ./test-harness/
+COPY go.mod go.sum ./
 
 # Install go application dependencies
 RUN go mod download -x

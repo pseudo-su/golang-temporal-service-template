@@ -56,12 +56,6 @@ tools/protoc-gen-go-grpc: tools/tools.cfg
 tools/protoc-gen-go: tools/tools.cfg
 	. ./tools/tools.cfg && env GOBIN=$${PWD}/tools go install google.golang.org/protobuf/cmd/protoc-gen-go@v$${protoc_gen_go}
 
-tools/protoc-gen-grpc-gateway:
-	. ./tools/tools.cfg && env GOBIN=$${PWD}/tools go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway@v$${protoc_gen_grpc_gateway}
-
-tools/protoc-gen-openapi: tools/tools.cfg
-	. ./tools/tools.cfg && env GOBIN=$${PWD}/tools go install github.com/google/gnostic/cmd/protoc-gen-openapi@v$${protoc_gen_openapi}
-
 tools/temporal: tools/tools.cfg tools/device-info.cfg
 	. ./tools/tools.cfg && . ./tools/device-info.cfg && curl -sfL https://github.com/temporalio/cli/releases/download/v$${temporal_cli}/temporal_cli_$${temporal_cli}_$${device_platform}_$${device_architecture}.tar.gz > tools/temporal.tar.gz
 	tar -xvzf ./tools/temporal.tar.gz temporal

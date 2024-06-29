@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"time"
 
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
 )
 
@@ -24,11 +26,19 @@ func (s *HttpServer) ListenAndServe(interruptCh <-chan interface{}) error {
 }
 
 func (s *HttpServer) Serve(listener net.Listener, interruptCh <-chan interface{}) error {
-	go func() {
-		if err := s.combinedServer.Serve(listener); err != nil && err != grpc.ErrServerStopped && err != http.ErrServerClosed {
-			slog.ErrorContext(context.Background(), "shutdown error", slog.Any("error", err))
-		}
-	}()
+	if s.opts.useEmbeddedGrpcGateway {
+		go func() {
+			if err := s.combinedServer.Serve(listener); err != nil && err != grpc.ErrServerStopped && err != http.ErrServerClosed {
+				slog.ErrorContext(context.Background(), "shutdown error", slog.Any("error", err))
+			}
+		}()
+	} else {
+		go func() {
+			if err := http.Serve(listener, h2c.NewHandler(s.connectServer, &http2.Server{})); err != nil && err != grpc.ErrServerStopped && err != http.ErrServerClosed {
+				slog.ErrorContext(context.Background(), "shutdown error", slog.Any("error", err))
+			}
+		}()
+	}
 
 	<-interruptCh
 

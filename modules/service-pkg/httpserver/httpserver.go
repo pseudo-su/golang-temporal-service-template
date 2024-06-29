@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"connectrpc.com/grpcreflect"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
@@ -14,6 +15,7 @@ type HttpServer struct {
 	opts              httpServerOpts
 	grpcServer        *grpc.Server
 	grpcGatewayServer *runtime.ServeMux
+	connectServer     *http.ServeMux
 	combinedServer    *http.Server
 }
 
@@ -40,6 +42,14 @@ func New(ctx context.Context, options ...Option) (*HttpServer, error) {
 		s.grpcGatewayServer = runtime.NewServeMux()
 	}
 
+	s.connectServer = http.NewServeMux()
+
+	if s.opts.reflection {
+		reflector := grpcreflect.NewStaticReflector()
+		s.connectServer.Handle(grpcreflect.NewHandlerV1(reflector))
+		s.connectServer.Handle(grpcreflect.NewHandlerV1Alpha(reflector))
+	}
+
 	s.combinedServer = newCombinedServer(ctx, s.grpcServer, s.grpcGatewayServer)
 
 	return s, nil
@@ -58,4 +68,10 @@ func (s *HttpServer) RegisterGatewayHandlers(registerFn RegisterGrpcGatewayHandl
 		return fmt.Errorf("attempted to register gateway handlers without enabling embedded gateway")
 	}
 	return registerFn(s.grpcGatewayServer)
+}
+
+type RegisterConnectHandlerFn func(connectServer *http.ServeMux)
+
+func (s *HttpServer) RegisterConnectHandler(registerFn RegisterConnectHandlerFn) {
+	registerFn(s.connectServer)
 }

@@ -4,17 +4,16 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"os"
 
+	"connectrpc.com/grpchealth"
 	"github.com/pseudo-su/golang-temporal-service-template/modules/service-pkg/httpserver"
 	"github.com/pseudo-su/golang-temporal-service-template/modules/service-pkg/initialise"
 	"github.com/pseudo-su/golang-temporal-service-template/modules/service-pkg/rungroup"
 	"github.com/pseudo-su/golang-temporal-service-template/modules/worker/internal"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/worker"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/health"
-	"google.golang.org/grpc/health/grpc_health_v1"
 )
 
 func main() {
@@ -42,9 +41,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	healthServer := health.NewServer()
-	httpServer.RegisterGrpcServer(func(s *grpc.Server) {
-		grpc_health_v1.RegisterHealthServer(s, healthServer)
+	// healthServer := health.NewServer()
+	// httpServer.RegisterGrpcServer(func(s *grpc.Server) {
+	// 	grpc_health_v1.RegisterHealthServer(s, healthServer)
+	// })
+
+	httpServer.RegisterConnectHandler(func(connectServer *http.ServeMux) {
+		connectServer.Handle(grpchealth.NewHandler(grpchealth.NewStaticChecker()))
 	})
 
 	// load secrets from aegis - not yet

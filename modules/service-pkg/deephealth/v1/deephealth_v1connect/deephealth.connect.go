@@ -71,6 +71,7 @@ func NewDeepHealthClient(httpClient connect.HTTPClient, baseURL string, opts ...
 			httpClient,
 			baseURL+DeepHealthCheckProcedure,
 			connect.WithSchema(deepHealthCheckMethodDescriptor),
+			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 	}
@@ -109,6 +110,7 @@ func NewDeepHealthHandler(svc DeepHealthHandler, opts ...connect.HandlerOption) 
 		DeepHealthCheckProcedure,
 		svc.Check,
 		connect.WithSchema(deepHealthCheckMethodDescriptor),
+		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	return "/deephealth.v1.DeepHealth/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -7,8 +7,6 @@ option java_package = "com.github.pseudo-su.golang-temporal-service-template.dee
 option java_outer_classname = "DeephealthProto";
 option java_multiple_files = true;
 
-import "google/api/annotations.proto";
-
 // The deep health service definition.
 // buf:lint:ignore SERVICE_SUFFIX
 service DeepHealth {
@@ -20,9 +18,7 @@ service DeepHealth {
   //   aip.dev/not-precedent: endpoint should simply be /Health and not verb-noun format
   // --)
   rpc Check (CheckRequest) returns (CheckResponse) {
-    option (google.api.http) = {
-      get: "/v1/health/deep"
-    };
+    option idempotency_level = NO_SIDE_EFFECTS;
   }
 }
 
