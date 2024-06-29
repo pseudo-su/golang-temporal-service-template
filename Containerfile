@@ -10,7 +10,7 @@ RUN apk add ca-certificates
 RUN update-ca-certificates
 
 # Build and include grpc-health-probe
-RUN env GOBIN=/builddir go install github.com/grpc-ecosystem/grpc-health-probe@latest
+RUN env CGO_ENABLED=0 GOBIN=/builddir go install github.com/grpc-ecosystem/grpc-health-probe@645566f
 
 # Copy across
 COPY go.mod go.sum ./
