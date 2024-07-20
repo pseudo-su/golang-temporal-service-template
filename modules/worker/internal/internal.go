@@ -43,6 +43,7 @@ func NewWorker(ctx context.Context, cfg *WorkerConfig) (*Worker, error) {
 	tc, err := client.Dial(client.Options{
 		HostPort:  cfg.Temporal.Uri.AsString(),
 		Namespace: cfg.Temporal.Namespace,
+		Logger:    slog.Default(),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("error creating temporal client %w", err)
