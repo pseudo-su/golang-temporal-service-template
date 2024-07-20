@@ -7,6 +7,10 @@ option java_package = "com.github.pseudo-su.golang-temporal-service-template.dee
 option java_outer_classname = "DeephealthProto";
 option java_multiple_files = true;
 
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "google/api/field_behavior.proto";
+
 // The deep health service definition.
 // buf:lint:ignore SERVICE_SUFFIX
 service DeepHealth {
@@ -17,16 +21,115 @@ service DeepHealth {
   //   api-linter: core::0136::http-uri-suffix=disabled
   //   aip.dev/not-precedent: endpoint should simply be /Health and not verb-noun format
   // --)
-  rpc Check (CheckRequest) returns (CheckResponse) {
-    option idempotency_level = NO_SIDE_EFFECTS;
+  rpc Check (DeepHealthCheckRequest) returns (DeepHealthCheckResponse) {
+    option (google.api.http) = {
+      get: "/v1/health/deep"
+    };
   }
 }
 
 // The request message containing the user's name.
-message CheckRequest {}
+message DeepHealthCheckRequest {
+  // [Optional] consumer identifier
+  // (--
+  //   api-linter: core::0140::prepositions=disabled
+  // --)
+  string triggered_by = 1 [(google.api.field_behavior) = OPTIONAL];
+}
 
 // The response message containing the greetings
-message CheckResponse {
-  // Placeholder message response
-  string message = 1;
+message DeepHealthCheckResponse {
+  // Possible health state.
+  enum HealthState {
+    // health state unspecified
+    HEALTH_STATE_UNSPECIFIED = 0;
+    // all downstream responses have healthy responses
+    HEALTH_STATE_OK = 1;
+    // some / all downstream responses have unhealthy responses
+    HEALTH_STATE_FAIL = 2;
+  }
+  // state of the service
+  HealthState health_state = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  //  status of the service
+  int32 http_status = 2;
+
+  // time health check call is made
+  google.protobuf.Timestamp generated_time = 3;
+
+  // various downstream services that form part of the overall deep health check
+  repeated Service services = 4;
+}
+
+// response from deep health service check, will include health checks from downstream services
+message Service {
+  // Possible service modes.
+  enum ServiceMode {
+    // service mode unspecified
+    SERVICE_MODE_UNSPECIFIED = 0;
+    // currently inactive, won't form part of the overall health check response
+    SERVICE_MODE_DISABLED = 1;
+    // running off of stubbed servers
+    SERVICE_MODE_STUB = 2;
+    // running live within environments
+    SERVICE_MODE_LIVE = 3;
+  }
+
+  // desc of the service
+  // (--
+  //   api-linter: core::0122::name-suffix=disabled
+  // --)
+  string service_name = 1;
+
+  // mode of the service
+  ServiceMode service_mode = 2;
+
+  repeated ServiceCheck checks = 3;
+}
+
+// information about a single health check call against a service, eg. hitting a jwks endpoint
+message ServiceCheck {
+  // Possible service health states.
+  enum HealthState {
+    // health service state unspecified
+    HEALTH_STATE_UNSPECIFIED = 0;
+
+    // health service unimplemented
+    HEALTH_STATE_UNIMPLEMENTED = 1;
+    // service up and running
+    HEALTH_STATE_GOOD = 2;
+    // service unavailable
+    HEALTH_STATE_BAD = 3;
+  }
+
+  // Possible initiated services.
+  enum InitiatedFromService {
+    // initiated from unspecified
+    INITIATED_FROM_SERVICE_UNSPECIFIED = 0;
+
+    // initiated from frontdoor service
+    INITIATED_FROM_SERVICE_FRONTDOOR = 1;
+    // initiated from workflow
+    INITIATED_FROM_SERVICE_WORKER = 2;
+  }
+
+  // description
+  string description = 1;
+
+  // state of the service
+  HealthState health_state = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // initiated from service
+  // (--
+  //   api-linter: core::0140::prepositions=disabled
+  // --)
+  InitiatedFromService initiated_from = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Status returned by the downstream service check.
+  oneof status {
+    // the downstream call was made over HTTP, and this is the response status code.
+    int32 http_status = 4;
+    // the downstream call was made over GRPC, and this is the response status code.
+    int32 grpc_status = 5;
+  }
 }

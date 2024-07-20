@@ -54,7 +54,7 @@ type DeepHealthClient interface {
 	//	aip.dev/not-precedent: endpoint should simply be /Health and not verb-noun format
 	//
 	// --)
-	Check(context.Context, *connect.Request[v1.CheckRequest]) (*connect.Response[v1.CheckResponse], error)
+	Check(context.Context, *connect.Request[v1.DeepHealthCheckRequest]) (*connect.Response[v1.DeepHealthCheckResponse], error)
 }
 
 // NewDeepHealthClient constructs a client for the deephealth.v1.DeepHealth service. By default, it
@@ -67,11 +67,10 @@ type DeepHealthClient interface {
 func NewDeepHealthClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) DeepHealthClient {
 	baseURL = strings.TrimRight(baseURL, "/")
 	return &deepHealthClient{
-		check: connect.NewClient[v1.CheckRequest, v1.CheckResponse](
+		check: connect.NewClient[v1.DeepHealthCheckRequest, v1.DeepHealthCheckResponse](
 			httpClient,
 			baseURL+DeepHealthCheckProcedure,
 			connect.WithSchema(deepHealthCheckMethodDescriptor),
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 	}
@@ -79,11 +78,11 @@ func NewDeepHealthClient(httpClient connect.HTTPClient, baseURL string, opts ...
 
 // deepHealthClient implements DeepHealthClient.
 type deepHealthClient struct {
-	check *connect.Client[v1.CheckRequest, v1.CheckResponse]
+	check *connect.Client[v1.DeepHealthCheckRequest, v1.DeepHealthCheckResponse]
 }
 
 // Check calls deephealth.v1.DeepHealth.Check.
-func (c *deepHealthClient) Check(ctx context.Context, req *connect.Request[v1.CheckRequest]) (*connect.Response[v1.CheckResponse], error) {
+func (c *deepHealthClient) Check(ctx context.Context, req *connect.Request[v1.DeepHealthCheckRequest]) (*connect.Response[v1.DeepHealthCheckResponse], error) {
 	return c.check.CallUnary(ctx, req)
 }
 
@@ -97,7 +96,7 @@ type DeepHealthHandler interface {
 	//	aip.dev/not-precedent: endpoint should simply be /Health and not verb-noun format
 	//
 	// --)
-	Check(context.Context, *connect.Request[v1.CheckRequest]) (*connect.Response[v1.CheckResponse], error)
+	Check(context.Context, *connect.Request[v1.DeepHealthCheckRequest]) (*connect.Response[v1.DeepHealthCheckResponse], error)
 }
 
 // NewDeepHealthHandler builds an HTTP handler from the service implementation. It returns the path
@@ -110,7 +109,6 @@ func NewDeepHealthHandler(svc DeepHealthHandler, opts ...connect.HandlerOption) 
 		DeepHealthCheckProcedure,
 		svc.Check,
 		connect.WithSchema(deepHealthCheckMethodDescriptor),
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	return "/deephealth.v1.DeepHealth/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -126,6 +124,6 @@ func NewDeepHealthHandler(svc DeepHealthHandler, opts ...connect.HandlerOption) 
 // UnimplementedDeepHealthHandler returns CodeUnimplemented from all methods.
 type UnimplementedDeepHealthHandler struct{}
 
-func (UnimplementedDeepHealthHandler) Check(context.Context, *connect.Request[v1.CheckRequest]) (*connect.Response[v1.CheckResponse], error) {
+func (UnimplementedDeepHealthHandler) Check(context.Context, *connect.Request[v1.DeepHealthCheckRequest]) (*connect.Response[v1.DeepHealthCheckResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("deephealth.v1.DeepHealth.Check is not implemented"))
 }

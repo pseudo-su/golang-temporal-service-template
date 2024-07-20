@@ -25,7 +25,7 @@ type PubsubEventConsumer interface {
 
 // TODO: change this to a more generic event/proto type
 type PubsubEvent struct {
-	Health *deephealth_v1.CheckResponse
+	Health *deephealth_v1.DeepHealthCheckResponse
 }
 
 type PubsubInteractor struct {
@@ -98,7 +98,7 @@ func (in *PubsubInteractor) Publish(ctx context.Context, eventType string, messa
 
 func (in *PubsubInteractor) Receive(ctx context.Context) {
 	err := in.State.Subscription.Receive(ctx, func(ctx context.Context, message *pubsub.Message) {
-		msg := deephealth_v1.CheckResponse{}
+		msg := deephealth_v1.DeepHealthCheckResponse{}
 
 		err := proto.Unmarshal(message.Data, &msg)
 		if err != nil {
@@ -193,7 +193,7 @@ func (in *PubsubEventConsumerInteractor) PrintEvents(w io.Writer) {
 	}
 
 	for _, event := range in.eventsReceived {
-		fmt.Fprintf(w, "EVENT: %s\n", event.Health.Message)
+		fmt.Fprintf(w, "EVENT: %s\n", event.Health.HealthState)
 	}
 
 	fmt.Fprintf(w, "total: %d", len(in.eventsReceived))
@@ -215,23 +215,25 @@ func (in *PubsubInteractor) GetPubsubEventsInteractorWithFilters(filterFns ...Pu
 }
 
 func HealthyResponses(event *PubsubEvent) error {
-	if event.Health.Message != "1" {
-		return fmt.Errorf("unhealthy state found: %s", event.Health.Message)
+	if event.Health.HealthState != deephealth_v1.DeepHealthCheckResponse_HEALTH_STATE_OK {
+		return fmt.Errorf("unhealthy state found: %s", event.Health.HealthState.String())
 	}
 	return nil
 }
 
-func (in *PubsubEventConsumerInteractor) confirmEventReceived(expectedHealthState string) error {
+func (in *PubsubEventConsumerInteractor) confirmEventReceived(expectedHealthState deephealth_v1.DeepHealthCheckResponse_HealthState) error {
 	for _, event := range in.eventsReceived[in.waitedEventIndex:] {
 		in.waitedEventIndex++
-		switch event.Health.Message {
+		switch event.Health.HealthState {
 		case expectedHealthState:
-			if reflect.TypeOf(event.Health.Message) == reflect.TypeOf(expectedHealthState) {
+			if reflect.TypeOf(event.Health.HealthState) == reflect.TypeOf(expectedHealthState) {
 				return nil
 			}
-		case "2":
+		case deephealth_v1.DeepHealthCheckResponse_HEALTH_STATE_UNSPECIFIED:
 			continue
-		case "0":
+		case deephealth_v1.DeepHealthCheckResponse_HEALTH_STATE_OK:
+			continue
+		case deephealth_v1.DeepHealthCheckResponse_HEALTH_STATE_FAIL:
 			continue
 		default:
 			continue
@@ -241,7 +243,7 @@ func (in *PubsubEventConsumerInteractor) confirmEventReceived(expectedHealthStat
 	return fmt.Errorf("did not receive event: %s", expectedHealthState)
 }
 
-func (in *PubsubEventConsumerInteractor) WaitForEvent(expected string) error {
+func (in *PubsubEventConsumerInteractor) WaitForEvent(expected deephealth_v1.DeepHealthCheckResponse_HealthState) error {
 	giveUp := time.Now().Add(in.timeout)
 	for {
 		if in.confirmEventReceived(expected) == nil {

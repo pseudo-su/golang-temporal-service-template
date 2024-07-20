@@ -32,9 +32,9 @@ var _ = Describe("readiness", LabelDeliverable(DeliverableServiceAccess), func()
 
 	It("deep health", func(ctx SpecContext) {
 		client := grpc_deephealth_v1.NewDeepHealthClient(conn)
-		response, err := client.Check(ctx, &grpc_deephealth_v1.CheckRequest{})
+		response, err := client.Check(ctx, &grpc_deephealth_v1.DeepHealthCheckRequest{})
 		Expect(err).ToNot(HaveOccurred())
 		Expect(response).ToNot(BeNil())
-		Expect(response.Message).To(Equal("Placeholder"))
+		Expect(response.HealthState).To(Equal(grpc_deephealth_v1.DeepHealthCheckResponse_HEALTH_STATE_OK))
 	})
 })

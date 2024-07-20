@@ -9,6 +9,7 @@ import (
 	"connectrpc.com/grpchealth"
 	"github.com/pseudo-su/golang-temporal-service-template/modules/service-pkg/httpserver"
 	"github.com/pseudo-su/golang-temporal-service-template/modules/service-pkg/rungroup"
+	"github.com/pseudo-su/golang-temporal-service-template/modules/worker/internal/workflows/deephealthcheck"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/worker"
 )
@@ -52,9 +53,10 @@ func NewWorker(ctx context.Context, cfg *WorkerConfig) (*Worker, error) {
 	slog.InfoContext(ctx, "Initialising temporal worker")
 	w := worker.New(tc, tq, worker.Options{})
 
-	// register workflows - not yet
+	// register workflows
+	deephealthcheck.RegisterWorkflows(w)
 
-	// register activities - not yet
+	// register activities
 
 	return &Worker{
 		httpServer: httpServer,

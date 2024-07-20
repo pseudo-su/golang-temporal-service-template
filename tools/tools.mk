@@ -5,7 +5,7 @@ tools/actionlint: tools/tools.cfg
 	. ./tools/tools.cfg && env GOBIN=$${PWD}/tools go install github.com/rhysd/actionlint/cmd/actionlint@v$${actionlint}
 
 tools/api-linter: tools/tools.cfg
-	. ./tools/tools.cfg && env GOBIN=$${PWD}/tools go install github.com/googleapis/api-linter/cmd/api-linter@v$${api_linter_googleapis}
+	. ./tools/tools.cfg && env GOBIN=$${PWD}/tools go install github.com/googleapis/api-linter/cmd/api-linter@v$${googleapis_api_linter}
 
 tools/buf: tools/tools.cfg
 	. ./tools/tools.cfg && env GOBIN=$${PWD}/tools go install github.com/bufbuild/buf/cmd/buf@v$${buf}
