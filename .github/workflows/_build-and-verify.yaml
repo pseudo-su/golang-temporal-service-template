@@ -113,7 +113,7 @@ jobs:
     needs:
       - cache-setup
     env:
-      PODMAN_COMPOSE_PROVIDER: podman-compose
+      PODMAN_COMPOSE_PROVIDER: docker-compose
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -128,7 +128,7 @@ jobs:
       - name: Install podman-compose from ubuntu repositories
         shell: bash
         run: |
-          pip3 install podman-compose
+          systemctl --user enable --now podman.socket
 
       - name: Start the devstack
         shell: bash
