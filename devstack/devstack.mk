@@ -16,6 +16,10 @@ devstack.build:
 	$(DEVSTACK_COMPOSE) build
 .PHONY: devstack.build
 
+devstack.build-instrumented:
+	$(DEVSTACK_COMPOSE_INSTRUMENTED) build
+.PHONY: devstack.build-instrumented
+
 ## Start the devstack
 devstack.start:
 	$(DEVSTACK_COMPOSE) --verbose up --build -d --remove-orphans $(DEVSTACK_TARGET)
