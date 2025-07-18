@@ -52,7 +52,7 @@ jobs:
           tags: ${{ steps.service-meta.outputs.tags }}
           labels: ${{ steps.service-meta.outputs.labels }}
           containerfiles: |
-            ./Containerfile.alt
+            ./Containerfile
           build-args: |
             entrypoint=modules/${{matrix.image}}/cmd/${{matrix.image}}
           extra-args: |
