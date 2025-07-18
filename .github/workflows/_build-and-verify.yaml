@@ -112,9 +112,6 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - cache-setup
-    env:
-      # TODO: use podman compose https://github.com/redhat-actions/buildah-build/issues/116#issuecomment-1890340223
-      DEVSTACK_COMPOSE_TOOL: docker-compose
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3

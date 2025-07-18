@@ -1,4 +1,3 @@
-version: "3"
 services:
 
   all:
@@ -196,7 +195,7 @@ services:
       - ./deps/temporal-server/config.yaml:/etc/temporal/config/dynamicconfig.yaml
 
   dep_temporal-startupscripts:
-    image: temporalio/admin-tools:1.24.2-tctl-1
+    image: temporalio/admin-tools:1.24.2-tctl-1.18.1-cli-1.0.0
     environment:
       - TEMPORAL_CLI_ADDRESS=dep_temporal-server:7233
     depends_on:
