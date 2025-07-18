@@ -44,7 +44,7 @@ jobs:
         shell: bash
         run: make verify
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: verify-reports
@@ -100,7 +100,7 @@ jobs:
         shell: bash
         run: make test.unit.report
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: unit-test-reports
@@ -145,7 +145,7 @@ jobs:
         run: |
           make devstack.capture-coverage-reports
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: integration-test-reports
@@ -179,19 +179,19 @@ jobs:
       #     app-deps-enabled: true
       #     tool-deps-enabled: true
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         continue-on-error: true
         with:
           name: verify-reports
           path: reports/
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         continue-on-error: true
         with:
           name: unit-test-reports
           path: reports/
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         continue-on-error: true
         with:
           name: integration-test-reports
