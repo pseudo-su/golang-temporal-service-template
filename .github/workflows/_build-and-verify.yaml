@@ -125,6 +125,11 @@ jobs:
           app-deps-enabled: true
           tool-deps-enabled: true
 
+      - name: Install podman-compose from ubuntu repositories
+        shell: bash
+        run: |
+          pip3 install podman-compose
+
       - name: Start the devstack
         shell: bash
         env:
