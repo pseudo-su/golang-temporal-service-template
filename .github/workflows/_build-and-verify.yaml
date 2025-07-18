@@ -112,6 +112,8 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - cache-setup
+    env:
+      PODMAN_COMPOSE_PROVIDER: podman-compose
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
