@@ -123,6 +123,8 @@ jobs:
           app-deps-enabled: true
           tool-deps-enabled: true
 
+      - uses: webgtx/setup-podman-compose@v1
+
       - name: Start the devstack
         shell: bash
         env:
