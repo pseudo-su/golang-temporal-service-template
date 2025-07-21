@@ -133,6 +133,7 @@ jobs:
         env:
           DEVSTACK_TARGET: components deps
         run: |
+          make devstack.build-instrumented
           make devstack.start-instrumented
 
       - name: Run integration tests
