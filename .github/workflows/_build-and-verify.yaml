@@ -128,12 +128,18 @@ jobs:
         run: |
           systemctl --user enable --now podman.socket
 
-      - name: Start the devstack
+      - name: Build the devstack
         shell: bash
         env:
           DEVSTACK_TARGET: components deps
         run: |
           make devstack.build-instrumented
+
+      - name: Start the devstack
+        shell: bash
+        env:
+          DEVSTACK_TARGET: components deps
+        run: |
           make devstack.start-instrumented
 
       - name: Run integration tests
