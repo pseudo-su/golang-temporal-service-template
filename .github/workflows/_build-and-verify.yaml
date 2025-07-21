@@ -44,7 +44,7 @@ jobs:
         shell: bash
         run: make verify
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: verify-reports
@@ -100,7 +100,7 @@ jobs:
         shell: bash
         run: make test.unit.report
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: unit-test-reports
@@ -112,9 +112,6 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - cache-setup
-    env:
-      # TODO: use podman compose https://github.com/redhat-actions/buildah-build/issues/116#issuecomment-1890340223
-      DEVSTACK_COMPOSE_TOOL: docker-compose
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -125,6 +122,18 @@ jobs:
           go-enabled: true
           app-deps-enabled: true
           tool-deps-enabled: true
+
+      - name: Enable podman remote socket
+        shell: bash
+        run: |
+          systemctl --user enable --now podman.socket
+
+      - name: Build the devstack
+        shell: bash
+        env:
+          DEVSTACK_TARGET: components deps
+        run: |
+          make devstack.build-instrumented
 
       - name: Start the devstack
         shell: bash
@@ -145,7 +154,7 @@ jobs:
         run: |
           make devstack.capture-coverage-reports
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: integration-test-reports
@@ -179,19 +188,19 @@ jobs:
       #     app-deps-enabled: true
       #     tool-deps-enabled: true
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         continue-on-error: true
         with:
           name: verify-reports
           path: reports/
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         continue-on-error: true
         with:
           name: unit-test-reports
           path: reports/
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         continue-on-error: true
         with:
           name: integration-test-reports
